@@ -145,7 +145,6 @@ public final class GeneratorProcessor extends AbstractProcessor{
                     error(element.getSimpleName()+" 不能为private,请修正");
                 }
                 TypeElement enclosingElement = (TypeElement)element.getEnclosingElement();
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,"注释的方法:"+element.getSimpleName()+",修饰符:"+element.getModifiers().toString());
                 Annotation annotation = element.getAnnotation(annotationClass);
                 Method method = annotationClass.getMethod("value");
                 int id = (int)method.invoke(annotation);
