@@ -1,6 +1,6 @@
 package hxws.generator;
 
-import android.app.Fragment;
+import android.support.v4.app.Fragment;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -12,7 +12,7 @@ import hxws.generator.annotations.onItemClick;
 import hxws.generator.annotations.setLayout;
 
 @setLayout(R.layout.frag)
-public class Myfrag extends Fragment{
+public class Myfrag extends Fragment {
 
     @findview(R.id.lv) ListView lv;
     @onItemClick(R.id.lv) void itemClick(AdapterView parent,View view,int position,long id){

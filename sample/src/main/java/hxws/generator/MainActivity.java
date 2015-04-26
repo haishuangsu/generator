@@ -1,9 +1,9 @@
 package hxws.generator;
 
-import android.app.Activity;
-import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentTransaction;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -23,7 +23,7 @@ import hxws.generator.annotations.setLayout;
 
 
 @setLayout(R.layout.activity_main)
-public class MainActivity extends Activity {
+public class MainActivity extends FragmentActivity {
 
     private RequestQueue queue;
 
@@ -59,7 +59,8 @@ public class MainActivity extends Activity {
     }
 
     @onClick(R.id.frag_show) void jumpFrag(){
-        FragmentTransaction tran = getFragmentManager().beginTransaction();
+        //        FragmentTransaction tran = getFragmentManager().beginTransaction(); app
+        FragmentTransaction tran = getSupportFragmentManager().beginTransaction();
         Myfrag myfrag = new Myfrag_();
         tran.replace(R.id.frag_lay,myfrag);
         tran.commit();

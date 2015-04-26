@@ -83,7 +83,7 @@ public class ViewGenerator {
         builder.append("package " + packageName + ";\n \n");
         builder.append("import android.os.Bundle;\n");
         builder.append("import android.view.View;\n");
-        if("android.app.Fragment".equals(type)){
+        if("android.app.Fragment".equals(type) || "android.support.v4.app.Fragment".equals(type)){
             builder.append("import android.view.LayoutInflater;\n");
             builder.append("import android.view.ViewGroup;\n");
         }
@@ -91,7 +91,7 @@ public class ViewGenerator {
         builder.append("public class " + className + "_" + " extends " + className);
         builder.append("{ \n");
         builder.append("\n  @Override\n");
-        if("android.app.Fragment".equals(type)){
+        if("android.app.Fragment".equals(type) || "android.support.v4.app.Fragment".equals(type)){
             builder.append("  public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)");
             builder.append("{ \n");
             if(layoutId != 0){
@@ -109,7 +109,7 @@ public class ViewGenerator {
             for(Listener lifeListener :lifeListeners){
                 lifeCycle(builder,lifeListener,false);
             }
-        }else{
+        }else if("android.app.Activity".equals(type) || "android.support.v4.app.FragmentActivity".equals(type)){
             builder.append("  protected void onCreate(Bundle savedInstanceState) ");
             builder.append("{ \n");
             builder.append("    super.onCreate(savedInstanceState);\n");

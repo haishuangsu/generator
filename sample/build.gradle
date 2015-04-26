@@ -6,7 +6,7 @@ android {
     defaultConfig {
         applicationId "hxws.generator"
         minSdkVersion 14
-        targetSdkVersion 21
+        targetSdkVersion 19
         versionCode 1
         versionName "1.0"
         multiDexEnabled true
@@ -24,11 +24,12 @@ android {
 apply plugin: 'com.neenbedankt.android-apt'
 
 dependencies {
+    compile 'com.android.support:support-v4:19.+'
     compile files('libs/volley.jar')
     //以jar包形式
-    apt files('libs/generator.jar')
-    compile files('libs/generator.jar')
+    //apt files('libs/generator.jar')
+    //compile files('libs/generator.jar')
     //以项目源码形式
-//    apt project(':generator')
-//    compile project(':generator')
+    apt project(':generator')
+    compile project(':generator')
 }

@@ -86,7 +86,7 @@ public final class GeneratorProcessor extends AbstractProcessor{
         HashMap<TypeElement, ViewGenerator> targetMap = findTarget(roundEnv);
         for(Map.Entry<TypeElement, ViewGenerator> entrySet:targetMap.entrySet()){
             TypeElement typeElement = entrySet.getKey();
-           ViewGenerator generator =entrySet.getValue();
+            ViewGenerator generator =entrySet.getValue();
             try {
                 JavaFileObject jfo = filer.createSourceFile(generator.getPackageClass(), typeElement);
                 Writer writer = jfo.openWriter();
