@@ -32,9 +32,10 @@ public class MainActivity extends Activity {
 ```
 ===========================
 使用gennerator，你需要注意的
-* 生成的代码名称为你的Activity或Fragment名称加上"_",比如"MainActivity"生成后的源码为"MainActivity_"，在AndroidManif   est.xml中Activity名称要为"MainActivity_"
+* 生成的源码名称为你的Activity或Fragment名称加"\_",如"MainActivity"经过注释处理器处理生成的源码为"MainActivity\_",在AndroidManifefest.xml中注册Activity时必须以生成的源码名称"MainActivity_"
 * 必须用@setLayout方式设置layout
 * 使用注释的method和field不能为private
+
 
 
 
