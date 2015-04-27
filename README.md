@@ -1,6 +1,6 @@
 generator
 ===========================
-generator是基于jsr269可插拔注释处理器的android注解框架,框架采用代码生成方式处理注解，其中没以反射方式调用Field或Method，提高了效率。代码生成在编译器，通俗点来说就是在eclipse或android studio build project的时候已经生成，有疑问请搜jsr269。
+generator是基于jsr269可插拔注释处理器的android注解框架,框架采用代码生成方式处理注解，其中没以反射方式调用Field或Method，提高了效率。代码生成在编译期，通俗点来说就是在eclipse或android studio build project的时候已经生成，有疑问请搜jsr269。
 
 ****
 ###　　　　　　　　　　　　Author:苏海双
