@@ -6,6 +6,7 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.RequestQueue;
@@ -19,18 +20,20 @@ import hxws.generator.annotations.lifecycle.afterInject;
 import hxws.generator.annotations.lifecycle.onStart;
 import hxws.generator.annotations.onClick;
 import hxws.generator.annotations.onLongClick;
+import hxws.generator.annotations.rest.addRequest;
 import hxws.generator.annotations.setLayout;
 
 
 @setLayout(R.layout.activity_main)
 public class MainActivity extends FragmentActivity {
 
-    private RequestQueue queue;
+    public RequestQueue queue;
 
     @findview(R.id.jump) Button jump;
     @findview(R.id.getImage) Button getImage;
     @findview(R.id.frag_show) Button frag_show;
     @findview(R.id.image) ImageView pic;
+    @findview(R.id.show) TextView show;
 
     @onClick(R.id.jump) void click(){
         Intent intent = new Intent(this,SecActivity_.class);
@@ -74,5 +77,13 @@ public class MainActivity extends FragmentActivity {
     @afterInject
     void initRequestQueue() {
         queue = Volley.newRequestQueue(getApplicationContext());
+    }
+
+    @addRequest(methodType = "post",url = "http://www.haosou.com/",headers = {},params = {})
+    public void addRequest(String result,VolleyError error){
+        if(result != null)
+            show.setText(result);
+        else
+            show.setText(error.getMessage());
     }
 }

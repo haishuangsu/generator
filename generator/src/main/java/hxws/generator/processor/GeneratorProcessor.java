@@ -18,8 +18,10 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -37,8 +39,10 @@ import hxws.generator.annotations.onClick;
 import hxws.generator.annotations.onItemClick;
 import hxws.generator.annotations.onItemLongClick;
 import hxws.generator.annotations.onLongClick;
+import hxws.generator.annotations.rest.addRequest;
 import hxws.generator.annotations.setLayout;
 import hxws.generator.generation.Listener;
+import hxws.generator.generation.RequestVo;
 import hxws.generator.generation.ViewGenerator;
 
 
@@ -110,6 +114,7 @@ public final class GeneratorProcessor extends AbstractProcessor{
 
         }
         findAfter(targetMap,roundEnv);
+        findRequest(targetMap,roundEnv);
         findLifeCycle(targetMap,roundEnv);
         return targetMap;
     }
@@ -164,6 +169,27 @@ public final class GeneratorProcessor extends AbstractProcessor{
             ViewGenerator generator = getOrCreateGenerator(targetMap,enclosingElement);
             Listener listener = new Listener(element.getSimpleName().toString(), afterInject.class);
             generator.setAfter(listener);
+        }
+    }
+
+    private void findRequest(Map<TypeElement, ViewGenerator> targetMap, RoundEnvironment roundEnv){
+        for(Element element : roundEnv.getElementsAnnotatedWith(addRequest.class)){
+            if(isPrivate(element)){
+                error(element.getSimpleName()+" 不能为private,请修正");
+            }
+            TypeElement enclosingElement = (TypeElement)element.getEnclosingElement();
+            ExecutableElement executableElement = (ExecutableElement)element;
+            ViewGenerator generator = getOrCreateGenerator(targetMap,enclosingElement);
+            String methodType = element.getAnnotation(addRequest.class).methodType();
+            String url = element.getAnnotation(addRequest.class).url();
+            String [] headers = element.getAnnotation(addRequest.class).headers();
+            String [] params = element.getAnnotation(addRequest.class).params();
+            RequestVo vo = new RequestVo(element.getSimpleName().toString(),methodType,url,headers,params);
+            for(VariableElement variableElement:executableElement.getParameters()){
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,"what:"+variableElement.getSimpleName());
+            }
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,"注释的方法:"+element.getSimpleName()+",url:"+url+",methodType:"+methodType);
+            generator.addReqeust(vo);
         }
     }
 

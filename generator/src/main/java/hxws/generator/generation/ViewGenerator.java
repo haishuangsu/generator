@@ -29,6 +29,7 @@ public class ViewGenerator {
 
     private Map<Integer,ViewBindListener> viewMap = new HashMap<Integer,ViewBindListener>();
     private Set<Listener> lifeListeners = new HashSet<Listener>();
+    private Set<RequestVo> requestVos = new HashSet<RequestVo>();
 
     public ViewGenerator(String packageName,String className) {
         this.packageName = packageName;
@@ -49,6 +50,10 @@ public class ViewGenerator {
 
     public void addListener(int id,Listener listener){
         getOrGreate(id).addListener(listener);
+    }
+
+    public void addReqeust(RequestVo vo){
+        requestVos.add(vo);
     }
 
     private ViewBindListener getOrGreate(int id){
@@ -73,6 +78,10 @@ public class ViewGenerator {
         return viewMap;
     }
 
+    public Set<RequestVo> getRequestVos() {
+        return requestVos;
+    }
+
     public String getPackageClass(){
         return packageName+"."+className+"_";
     }
@@ -83,6 +92,15 @@ public class ViewGenerator {
         builder.append("package " + packageName + ";\n \n");
         builder.append("import android.os.Bundle;\n");
         builder.append("import android.view.View;\n");
+
+        builder.append("import com.android.volley.Request;\n");
+        builder.append("import com.android.volley.Response;\n");
+        builder.append("import com.android.volley.Response.Listener;\n");
+        builder.append("import com.android.volley.VolleyError;\n");
+        builder.append("import com.android.volley.toolbox.StringRequest;\n");
+        builder.append("import com.android.volley.Response.ErrorListener;\n");
+
+
         if("android.app.Fragment".equals(type) || "android.support.v4.app.Fragment".equals(type)){
             builder.append("import android.view.LayoutInflater;\n");
             builder.append("import android.view.ViewGroup;\n");
@@ -170,7 +188,26 @@ public class ViewGenerator {
         if(after!=null){
             builder.append("  void afterInject(){\n");
             builder.append("    "+after.getMethod()+"();\n");
-            builder.append("  } \n");
+            addRe(builder);
+            builder.append("\n  } \n");
+        }
+    }
+
+    private void addRe(StringBuilder builder){
+        for(RequestVo vo : getRequestVos()){
+            builder.append("\tStringRequest strReq = new StringRequest(Request.Method.GET,\n" +
+                    "\t\t"+"\""+vo.getUrl()+"\""+", new Response.Listener<String>() {\n" +
+                    "\t\t\t@Override\n" +
+                    "\t\t\tpublic void onResponse(String result) {\n" +
+                    "\t\t\t" +vo.getName()+"(result,null);\n"+
+                    "\t\t\t}\n" +
+                    "\t\t}, new ErrorListener() {\n" +
+                    "\t\t\t@Override\n" +
+                    "\t\t\tpublic void onErrorResponse(VolleyError error) {\n" +
+                    "\t\t\t" +vo.getName()+"(null,error);\n"+
+                    "\t\t\t}\n" +
+                    "\t\t});\n"+
+                    "\tqueue.add(strReq);\n");
         }
     }
 
