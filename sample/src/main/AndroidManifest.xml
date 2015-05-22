@@ -10,7 +10,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="hxws.generator.MainActivity_"
+            android:name="hxws.generator.ui.MainActivity_"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -19,7 +19,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="hxws.generator.SecActivity_"
+            android:name="hxws.generator.ui.SecActivity_"
             android:label="@string/title_activity_sec" >
         </activity>
     </application>

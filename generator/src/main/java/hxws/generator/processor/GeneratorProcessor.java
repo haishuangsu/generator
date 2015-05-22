@@ -18,10 +18,8 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -30,6 +28,7 @@ import javax.tools.JavaFileObject;
 
 import hxws.generator.annotations.findview;
 import hxws.generator.annotations.lifecycle.afterInject;
+import hxws.generator.annotations.lifecycle.onCreate;
 import hxws.generator.annotations.lifecycle.onDestroy;
 import hxws.generator.annotations.lifecycle.onPause;
 import hxws.generator.annotations.lifecycle.onResume;
@@ -66,6 +65,7 @@ public final class GeneratorProcessor extends AbstractProcessor{
 
     private static final List<Class<? extends Annotation>> LIFELISTENERS = Arrays.asList(
     onStart.class,
+    onCreate.class,
     onResume.class,
     onPause.class,
     onStop.class,
@@ -143,6 +143,7 @@ public final class GeneratorProcessor extends AbstractProcessor{
             generator.addViewAttr(id,element.toString(),type);
         }
     }
+
     private void findListener(Map<TypeElement, ViewGenerator> targetMap, RoundEnvironment roundEnv) throws Exception{
         for(Class<? extends Annotation> annotationClass : LISTENERS){
             for(Element element : roundEnv.getElementsAnnotatedWith(annotationClass)){
@@ -178,18 +179,23 @@ public final class GeneratorProcessor extends AbstractProcessor{
                 error(element.getSimpleName()+" 不能为private,请修正");
             }
             TypeElement enclosingElement = (TypeElement)element.getEnclosingElement();
-            ExecutableElement executableElement = (ExecutableElement)element;
-            ViewGenerator generator = getOrCreateGenerator(targetMap,enclosingElement);
+            ViewGenerator generator = getOrCreateGenerator(targetMap, enclosingElement);
             String methodType = element.getAnnotation(addRequest.class).methodType();
             String url = element.getAnnotation(addRequest.class).url();
             String [] headers = element.getAnnotation(addRequest.class).headers();
             String [] params = element.getAnnotation(addRequest.class).params();
-            RequestVo vo = new RequestVo(element.getSimpleName().toString(),methodType,url,headers,params);
-            for(VariableElement variableElement:executableElement.getParameters()){
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,"what:"+variableElement.getSimpleName());
-            }
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,"注释的方法:"+element.getSimpleName()+",url:"+url+",methodType:"+methodType);
-            generator.addReqeust(vo);
+            Annotation annotation = element.getAnnotation(addRequest.class);
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "what:" + annotation.toString());
+            String map = annotation.toString().split(",")[2].trim();
+            String convertClassName = map.contains("None") ? "" : map.substring(8, map.length());
+            int ref_id = element.getAnnotation(addRequest.class).ref_id();
+            String ref = element.getAnnotation(addRequest.class).ref();
+            String requestType = element.getAnnotation(addRequest.class).requestType();
+            RequestVo vo = new RequestVo(element.getSimpleName().toString(),methodType,requestType,url,headers,params,convertClassName,ref_id,ref);
+            generator.addRequestVo(vo);
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, ""+enclosingElement.getSimpleName()+",注释的方法:" + element.getSimpleName() +
+                    ",url:" + url + ",methodType:" + methodType +
+                    ",convertClass:" + convertClassName+",ref_id:"+ref_id+",ref_method:"+ref+",map:"+map);
         }
     }
 

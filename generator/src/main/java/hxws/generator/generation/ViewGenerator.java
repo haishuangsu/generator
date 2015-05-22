@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import hxws.generator.annotations.lifecycle.afterInject;
+import hxws.generator.annotations.lifecycle.onCreate;
 import hxws.generator.annotations.lifecycle.onDestroy;
 import hxws.generator.annotations.lifecycle.onPause;
 import hxws.generator.annotations.lifecycle.onResume;
@@ -26,10 +28,9 @@ public class ViewGenerator {
     private int layoutId;
     private Listener after;
 
-
-    private Map<Integer,ViewBindListener> viewMap = new HashMap<Integer,ViewBindListener>();
-    private Set<Listener> lifeListeners = new HashSet<Listener>();
-    private Set<RequestVo> requestVos = new HashSet<RequestVo>();
+    private Map<Integer,ViewBindListener> viewMap = new HashMap<>();
+    private Set<Listener> lifeListeners = new HashSet<>();
+    private Set<RequestVo> requestVos = new HashSet<>();
 
     public ViewGenerator(String packageName,String className) {
         this.packageName = packageName;
@@ -45,14 +46,14 @@ public class ViewGenerator {
     }
 
     public void addViewAttr(int id,String name,String type){
-        getOrGreate(id,name,type);
+        getOrGreate(id, name, type);
     }
 
     public void addListener(int id,Listener listener){
         getOrGreate(id).addListener(listener);
     }
 
-    public void addReqeust(RequestVo vo){
+    public void addRequestVo(RequestVo vo){
         requestVos.add(vo);
     }
 
@@ -73,7 +74,6 @@ public class ViewGenerator {
         lifeListeners.add(listener);
     }
 
-
     public Map<Integer, ViewBindListener> getViewMap() {
         return viewMap;
     }
@@ -92,14 +92,15 @@ public class ViewGenerator {
         builder.append("package " + packageName + ";\n \n");
         builder.append("import android.os.Bundle;\n");
         builder.append("import android.view.View;\n");
-
         builder.append("import com.android.volley.Request;\n");
         builder.append("import com.android.volley.Response;\n");
         builder.append("import com.android.volley.Response.Listener;\n");
         builder.append("import com.android.volley.VolleyError;\n");
         builder.append("import com.android.volley.toolbox.StringRequest;\n");
+        builder.append("import com.android.volley.toolbox.ImageRequest;\n");
+        builder.append("import android.graphics.Bitmap;\n");
         builder.append("import com.android.volley.Response.ErrorListener;\n");
-
+        builder.append("import com.alibaba.fastjson.JSON;\n");
 
         if("android.app.Fragment".equals(type) || "android.support.v4.app.Fragment".equals(type)){
             builder.append("import android.view.LayoutInflater;\n");
@@ -108,17 +109,18 @@ public class ViewGenerator {
         builder.append("\n \n");
         builder.append("public class " + className + "_" + " extends " + className);
         builder.append("{ \n");
-        builder.append("\n  @Override\n");
+        builder.append("\t@Override\n");
         if("android.app.Fragment".equals(type) || "android.support.v4.app.Fragment".equals(type)){
-            builder.append("  public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)");
+            builder.append("\tpublic View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)");
             builder.append("{ \n");
+            builder.append("\t//onCreate\n");
             if(layoutId != 0){
-                builder.append("    View view = inflater.inflate("+layoutId+",null);\n");
+                builder.append("\tView view = inflater.inflate("+layoutId+",null);\n");
             }
-            builder.append("    inject(view);\n");
-            builder.append("    return view;\n");
-            builder.append("  }\n");
-            builder.append("  void inject(View view){\n");
+            builder.append("\tinject(view);\n");
+            builder.append("\treturn view;\n");
+            builder.append("\t}\n");
+            builder.append("\tvoid inject(View view){\n");
             for(ViewBindListener viewBindListener : getViewMap().values()){
                 findByid(builder,viewBindListener,false);
                 bindListener(builder, viewBindListener.getListeners(), viewBindListener.getId(),viewBindListener.getName());
@@ -128,15 +130,16 @@ public class ViewGenerator {
                 lifeCycle(builder,lifeListener,false);
             }
         }else if("android.app.Activity".equals(type) || "android.support.v4.app.FragmentActivity".equals(type)){
-            builder.append("  protected void onCreate(Bundle savedInstanceState) ");
+            builder.append("\tprotected void onCreate(Bundle savedInstanceState) ");
             builder.append("{ \n");
-            builder.append("    super.onCreate(savedInstanceState);\n");
+            builder.append("\tsuper.onCreate(savedInstanceState);\n");
+            builder.append("\t//onCreate\n");
             if(layoutId != 0){
-                builder.append("    setContentView("+layoutId+"); \n");
+                builder.append("\tsetContentView("+layoutId+"); \n");
             }
-            builder.append("    inject();\n");
+            builder.append("\tinject();\n");
             builder.append("\n  } \n");
-            builder.append("  void inject(){");
+            builder.append("\tvoid inject(){\n");
             for(ViewBindListener viewBindListener : getViewMap().values()){
                 findByid(builder,viewBindListener,true);
                 bindListener(builder, viewBindListener.getListeners(), viewBindListener.getId(),viewBindListener.getName());
@@ -147,104 +150,188 @@ public class ViewGenerator {
             }
         }
         builder.append("\n}");
-        return builder.toString();
+        return dealRequest(builder);
     }
 
     private void findByid(StringBuilder builder,ViewBindListener viewBindListener,boolean isAct){
         if(isAct){
-            builder.append("    "+viewBindListener.getName()+"="+"("+viewBindListener.getType()+")findViewById("+viewBindListener.getId()+");\n");
+            builder.append("\t"+viewBindListener.getName()+"="+"("+viewBindListener.getType()+")findViewById("+viewBindListener.getId()+");\n");
         }else{
-            builder.append("    "+viewBindListener.getName()+"="+"("+viewBindListener.getType()+")view.findViewById("+viewBindListener.getId()+");\n");
+            builder.append("\t"+viewBindListener.getName()+"="+"("+viewBindListener.getType()+")view.findViewById("+viewBindListener.getId()+");\n");
         }
     }
 
     private void bindListener(StringBuilder builder,Set<Listener> listeners,int id,String name){
         for(Listener listener : listeners){
             if(listener.getAnnotationClass().equals(onClick.class)){
-                builder.append("    "+name+".setOnClickListener(new View.OnClickListener() {\n");
-                builder.append("        @Override\n");
-                builder.append("        public void onClick(View v) { "+listener.getMethod()+"(); }\n    });\n");
+                builder.append("\t"+name+".setOnClickListener(new View.OnClickListener() {\n");
+                builder.append("\t\t@Override\n");
+                builder.append("\t\tpublic void onClick(View v) { \n \t\t//"+id+"-"+
+                                        listener.getAnnotationClass().getSimpleName()+"\n\t\t"+
+                                        listener.getMethod()+"(); \n\t\t}\n    });\n");
             }else if(listener.getAnnotationClass().equals(onLongClick.class)){
-                builder.append("    "+name+".setOnLongClickListener(new View.OnLongClickListener() {\n");
-                builder.append("        @Override\n");
-                builder.append("        public boolean onLongClick(View v) { "+listener.getMethod()+"(); return true;}\n    });\n");
+                builder.append("\t"+name+".setOnLongClickListener(new View.OnLongClickListener() {\n");
+                builder.append("\t\t@Override\n");
+                builder.append("\t\tpublic boolean onLongClick(View v) {\n \t\t// "+id+"-"+
+                                        listener.getAnnotationClass().getSimpleName()+"\n\t\t"+
+                                        listener.getMethod()+"(); return true;\n\t\t}\n    });\n");
             }else if(listener.getAnnotationClass().equals(onItemClick.class)){
-                builder.append("    "+name+".setOnItemClickListener(new android.widget.AdapterView.OnItemClickListener() {\n");
-                builder.append("        @Override\n");
-                builder.append("        public void onItemClick(android.widget.AdapterView<?> parent, View view, int position, long id) { "+listener.getMethod()+"(parent,view,position,id); }\n    });\n");
+                builder.append("\t"+name+".setOnItemClickListener(new android.widget.AdapterView.OnItemClickListener() {\n");
+                builder.append("\t\t@Override\n");
+                builder.append("\t\tpublic void onItemClick(android.widget.AdapterView<?> parent, View view, int position, long id) { \n\t\t//"+
+                                        id+"-"+listener.getAnnotationClass().getSimpleName()+"\n\t\t"+
+                                        listener.getMethod()+"(parent,view,position,id); \n\t\t}\n    });\n");
             }else if(listener.getAnnotationClass().equals(onItemLongClick.class)){
-                builder.append("    "+name+"..setOnItemLongClickListener(new android.widget.AdapterView.OnItemLongClickListener() {\n");
-                builder.append("        @Override\n");
-                builder.append("        public boolean onItemLongClick(android.widget.AdapterView<?> parent, View view, int position, long id) { "+listener.getMethod()+"(parent,view,position,id); return true;}\n    });\n");
+                builder.append("\t"+name+"..setOnItemLongClickListener(new android.widget.AdapterView.OnItemLongClickListener() {\n");
+                builder.append("\t\t@Override\n");
+                builder.append("\t\tpublic boolean onItemLongClick(android.widget.AdapterView<?> parent, View view, int position, long id) { \n\t\t//" +
+                        id + "-" + listener.getAnnotationClass().getSimpleName() + "\n\t\t" +
+                        listener.getMethod() + "(parent,view,position,id); return true;\n\t\t}\n    });\n");
             }
         }
     }
 
     private void afterInject(StringBuilder builder){
         if(after!=null){
-            builder.append("    afterInject();\n");
+            builder.append("\tafterInject();\n");
         }
         builder.append("  }\n");
         if(after!=null){
             builder.append("  void afterInject(){\n");
-            builder.append("    "+after.getMethod()+"();\n");
-            addRe(builder);
+            builder.append("\t//"+ afterInject.class.getSimpleName()+"\n");
+            builder.append("\t"+after.getMethod()+"();\n");
             builder.append("\n  } \n");
         }
     }
 
-    private void addRe(StringBuilder builder){
-        for(RequestVo vo : getRequestVos()){
-            builder.append("\tStringRequest strReq = new StringRequest(Request.Method.GET,\n" +
-                    "\t\t"+"\""+vo.getUrl()+"\""+", new Response.Listener<String>() {\n" +
-                    "\t\t\t@Override\n" +
-                    "\t\t\tpublic void onResponse(String result) {\n" +
-                    "\t\t\t" +vo.getName()+"(result,null);\n"+
-                    "\t\t\t}\n" +
-                    "\t\t}, new ErrorListener() {\n" +
-                    "\t\t\t@Override\n" +
-                    "\t\t\tpublic void onErrorResponse(VolleyError error) {\n" +
-                    "\t\t\t" +vo.getName()+"(null,error);\n"+
-                    "\t\t\t}\n" +
-                    "\t\t});\n"+
-                    "\tqueue.add(strReq);\n");
-        }
-    }
-
     private void lifeCycle(StringBuilder builder,Listener lifeListener,boolean isAct){
-        String key;
-        if(isAct){
-            key = "protected";
-        }else{
-            key = "public";
-        }
-        builder.append("  @Override\n");
+        String key = isAct ? "protected":"public";
         if(lifeListener.getAnnotationClass().equals(onStart.class)){
+            builder.append("  @Override\n");
             builder.append("  "+key+" void onStart() { \n");
             builder.append("      super.onStart();\n");
+            builder.append("\t//"+onStart.class.getSimpleName()+"\n");
             builder.append("      "+lifeListener.getMethod()+"();\n");
             builder.append("  } \n");
         }else if(lifeListener.getAnnotationClass().equals(onPause.class)){
+            builder.append("  @Override\n");
             builder.append("  "+key+" void onPause() { \n");
             builder.append("      super.onPause();\n");
+            builder.append("\t//"+onPause.class.getSimpleName()+"\n");
             builder.append("      "+lifeListener.getMethod()+"();\n");
             builder.append("  } \n");
         }else if(lifeListener.getAnnotationClass().equals(onResume.class)){
+            builder.append("  @Override\n");
             builder.append("  "+key+" void onResume() { \n");
             builder.append("      super.onResume();\n");
+            builder.append("\t//"+onResume.class.getSimpleName()+"\n");
             builder.append("      "+lifeListener.getMethod()+"();\n");
             builder.append("  } \n");
         }else if(lifeListener.getAnnotationClass().equals(onStop.class)){
+            builder.append("  @Override\n");
             builder.append("  "+key+" void onStop() { \n");
             builder.append("      super.onStop();\n");
+            builder.append("\t//"+onStop.class.getSimpleName()+"\n");
             builder.append("      "+lifeListener.getMethod()+"();\n");
             builder.append("  } \n");
         }else if(lifeListener.getAnnotationClass().equals(onDestroy.class)){
+            builder.append("  @Override\n");
             builder.append("  "+key+" void onDestroy() { \n");
             builder.append("      super.onDestroy();\n");
+            builder.append("\t//"+onDestroy.class.getSimpleName()+"\n");
             builder.append("      "+lifeListener.getMethod()+"();\n");
             builder.append("  } \n");
+        }else  if(lifeListener.getAnnotationClass().equals(onCreate.class)){
+            String target = "//"+ onCreate.class.getSimpleName();
+            int index = builder.indexOf(target);
+            builder.insert(index, "\n\t"+lifeListener.getMethod()+"();\n");
         }
     }
 
+    private String dealRequest(StringBuilder builder){
+        for(RequestVo vo : getRequestVos()){
+            String replace = "";
+            switch (vo.getRequestType()){
+                case "String":
+                    replace = RequestTemplete.STRING.output(vo);
+                    break;
+                case "Json":
+                    replace = RequestTemplete.JSON.output(vo);
+                    break;
+                case "Image":
+                    replace = RequestTemplete.IMAGE.output(vo);
+                    break;
+                default:
+                    break;
+            }
+            if(vo.getRef_id() !=0 && !vo.getRef().equals("")){
+                String target = "//"+vo.getRef_id()+"-"+vo.getRef();
+                int index = builder.indexOf(target);
+                builder.insert(index,replace);
+            }else if(vo.getRef_id() == 0 && !vo.getRef().equals("")){
+                String target = "//"+vo.getRef();
+                int index = builder.indexOf(target);
+                builder.insert(index,replace);
+            }
+        }
+        return builder.toString();
+    }
+
+    enum RequestTemplete {
+        STRING{
+            @Override
+            public String output(RequestVo vo){
+                String replace = "\n\tStringRequest req"+vo.getUuid()+" = new StringRequest(Request.Method.GET,\n" +
+                        "\t\t"+"\""+vo.getUrl()+"\""+", new Response.Listener<String>() {\n" +
+                        "\t\t\t@Override\n" +
+                        "\t\t\tpublic void onResponse(String result) {\n";
+                if(!"".equals(vo.getConvertClass())) {
+                    replace +=
+                            "\t\t\t" + vo.getConvertClass() + " vo=" + "JSON.parseObject(result," + vo.getConvertClass() + ".class);\n"+
+                            "\t\t\t" + vo.getName() + "(vo,null);\n";}else{
+                    replace +=
+                            "\t\t\t" + vo.getName() + "(result,null);\n"; }
+                        replace +=
+                        "\t\t\t}\n" +
+                        "\t\t}, new ErrorListener() {\n" +
+                        "\t\t\t@Override\n" +
+                        "\t\t\tpublic void onErrorResponse(VolleyError error) {\n" +
+                        "\t\t\t" +vo.getName()+"(null,error);\n"+
+                        "\t\t\t}\n" +
+                        "\t\t});\n"+
+                        "\tif(queue != null)\n"+
+                        "\tqueue.add(req"+vo.getUuid()+");\n";
+            return replace;
+            }
+        },
+        JSON{
+            @Override
+            public String output(RequestVo vo){
+                String replace = "";
+            return replace;
+            }
+        },
+        IMAGE{
+            @Override
+            public String output(RequestVo vo){
+                String replace = "\n\tImageRequest req"+vo.getUuid()+" = new ImageRequest("+
+                        "\""+vo.getUrl()+"\""+
+                        ", new Response.Listener<Bitmap>() {\n" +
+                        "\t\t@Override\n" +
+                        "\t\t\tpublic void onResponse(Bitmap returnBitmap) {\n" +
+                        "\t\t\t" +vo.getName()+"(returnBitmap,null);\n"+
+                        "\t\t\t}\n" +
+                        "\t\t},0, 0, null ,\n" +
+                        "\t\tnew Response.ErrorListener() {\n" +
+                        "\t\t\t@Override\n" +
+                        "\t\t\tpublic void onErrorResponse(VolleyError error) {\n" +
+                        "\t\t\t" +vo.getName()+"(null,error);\n"+
+                        "\t\t\t}\n" +
+                        "\t\t});\n" +
+                        "\tqueue.add(req"+vo.getUuid()+");\n";
+            return replace;
+            }
+        };
+        protected abstract String output(RequestVo vo);
+    }
 }

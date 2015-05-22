@@ -21,7 +21,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.http.AndroidHttpClient;
 import android.os.Build;
-import android.util.Log;
 
 import com.android.volley.Network;
 import com.android.volley.RequestQueue;
@@ -41,7 +40,6 @@ public class Volley {
      * @return A started {@link RequestQueue} instance.
      */
     public static RequestQueue newRequestQueue(Context context, HttpStack stack) {
-    	Log.i("Volley-deepdig", "Volley newRequestQueue(Context context, HttpStack stack)");
         File cacheDir = new File(context.getCacheDir(), DEFAULT_CACHE_DIR);
 //System.out.println("cacheDir:"+cacheDir);
 
@@ -78,7 +76,6 @@ public class Volley {
      * @return A started {@link RequestQueue} instance.
      */
     public static RequestQueue newRequestQueue(Context context) {
-    	Log.i("Volley-deepdig", "Volley newRequestQueue(Context context)");
         return newRequestQueue(context, null);
     }
 }

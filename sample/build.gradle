@@ -33,4 +33,5 @@ dependencies {
     apt project(':generator')
     compile project(':generator')
     compile project(':Volley')
+    compile files('libs/fastjson-1.1.45.android.jar')
 }

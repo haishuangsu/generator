@@ -16,8 +16,6 @@
 
 package com.android.volley.toolbox;
 
-import android.util.Log;
-
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.Request.Method;
@@ -68,7 +66,6 @@ public class HurlStack implements HttpStack {
 
     public HurlStack() {
         this(null);
-        Log.i("Volley-deepdig", "HurlStack HurlStack()");
     }
 
     /**
@@ -76,7 +73,6 @@ public class HurlStack implements HttpStack {
      */
     public HurlStack(UrlRewriter urlRewriter) {
         this(urlRewriter, null);
-        Log.i("Volley-deepdig", "HurlStack(UrlRewriter urlRewriter)");
     }
 
     /**
@@ -84,7 +80,6 @@ public class HurlStack implements HttpStack {
      * @param sslSocketFactory SSL factory to use for HTTPS connections
      */
     public HurlStack(UrlRewriter urlRewriter, SSLSocketFactory sslSocketFactory) {
-    	Log.i("Volley-deepdig", "HurlStack(UrlRewriter urlRewriter, SSLSocketFactory sslSocketFactory)");
         mUrlRewriter = urlRewriter;
         mSslSocketFactory = sslSocketFactory;
     }
