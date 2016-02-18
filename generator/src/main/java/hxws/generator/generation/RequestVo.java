@@ -17,7 +17,6 @@ public class RequestVo {
     private String ref;
     private String uuid;
 
-
     public RequestVo(String name,String methodType,String requestType, String url, String[] params, String[] headers,String convertClass,int ref_id,String ref) {
         this.name = name;
         this.methodType = methodType;
@@ -28,6 +27,7 @@ public class RequestVo {
         this.convertClass = convertClass;
         this.ref_id = ref_id;
         this.ref = ref;
+
         this.uuid = UUID.randomUUID().toString().replaceAll("-","");
     }
 

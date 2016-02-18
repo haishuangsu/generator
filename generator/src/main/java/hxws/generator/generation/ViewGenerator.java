@@ -2,7 +2,9 @@ package hxws.generator.generation;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 import hxws.generator.annotations.lifecycle.afterInject;
@@ -18,7 +20,6 @@ import hxws.generator.annotations.onItemLongClick;
 import hxws.generator.annotations.onLongClick;
 
 /**
- * @author 苏海双
  * Created by suhaishuang
  */
 public class ViewGenerator {
@@ -30,7 +31,7 @@ public class ViewGenerator {
 
     private Map<Integer,ViewBindListener> viewMap = new HashMap<>();
     private Set<Listener> lifeListeners = new HashSet<>();
-    private Set<RequestVo> requestVos = new HashSet<>();
+    private Queue<RequestVo> requestVos = new LinkedList<>();
 
     public ViewGenerator(String packageName,String className) {
         this.packageName = packageName;
@@ -78,7 +79,7 @@ public class ViewGenerator {
         return viewMap;
     }
 
-    public Set<RequestVo> getRequestVos() {
+    public Queue<RequestVo> getRequestVos() {
         return requestVos;
     }
 
@@ -94,13 +95,22 @@ public class ViewGenerator {
         builder.append("import android.view.View;\n");
         builder.append("import com.android.volley.Request;\n");
         builder.append("import com.android.volley.Response;\n");
-        builder.append("import com.android.volley.Response.Listener;\n");
+        builder.append("import com.android.volley.toolbox.JsonRequest;\n");
         builder.append("import com.android.volley.VolleyError;\n");
         builder.append("import com.android.volley.toolbox.StringRequest;\n");
         builder.append("import com.android.volley.toolbox.ImageRequest;\n");
+        builder.append("import com.android.volley.AuthFailureError;\n");
+        builder.append("import org.json.JSONException;\n");
+        builder.append("import org.json.JSONObject;\n");
+        builder.append("import java.io.UnsupportedEncodingException;\n");
+        builder.append("import com.android.volley.ParseError;\n");
+        builder.append("import com.android.volley.NetworkResponse;\n");
+        builder.append("import com.android.volley.toolbox.HttpHeaderParser;\n");
         builder.append("import android.graphics.Bitmap;\n");
         builder.append("import com.android.volley.Response.ErrorListener;\n");
         builder.append("import com.alibaba.fastjson.JSON;\n");
+        builder.append("import java.util.Map;\n");
+        builder.append("import java.util.HashMap;\n");
 
         if("android.app.Fragment".equals(type) || "android.support.v4.app.Fragment".equals(type)){
             builder.append("import android.view.LayoutInflater;\n");
@@ -150,7 +160,8 @@ public class ViewGenerator {
             }
         }
         builder.append("\n}");
-        return dealRequest(builder);
+        dealRequest(builder);
+        return builder.toString();
     }
 
     private void findByid(StringBuilder builder,ViewBindListener viewBindListener,boolean isAct){
@@ -192,65 +203,74 @@ public class ViewGenerator {
     }
 
     private void afterInject(StringBuilder builder){
+        builder.append("\tafterInject();\n"+
+                       "\t}\n");
+        builder.append("\tvoid afterInject(){\n"+
+                       "\t//"+ afterInject.class.getSimpleName()+"\n"+
+                       "\n\t} \n");
         if(after!=null){
-            builder.append("\tafterInject();\n");
-        }
-        builder.append("  }\n");
-        if(after!=null){
-            builder.append("  void afterInject(){\n");
-            builder.append("\t//"+ afterInject.class.getSimpleName()+"\n");
-            builder.append("\t"+after.getMethod()+"();\n");
-            builder.append("\n  } \n");
+            String target = "//"+afterInject.class.getSimpleName();
+            int index = builder.indexOf(target);
+            builder.insert(index, "\n\t" + after.getMethod() + "();\n");
         }
     }
 
     private void lifeCycle(StringBuilder builder,Listener lifeListener,boolean isAct){
         String key = isAct ? "protected":"public";
+        builder.append("\t@Override\n"+
+                       "\t"+key+" void onStart() { \n"+
+                       "\tsuper.onStart();\n"+
+                       "\t//"+onStart.class.getSimpleName()+"\n"+
+                       "\t} \n");
+        builder.append("\t@Override\n"+
+                       "\t"+key+" void onPause() { \n"+
+                       "\tsuper.onPause();\n"+
+                       "\t//"+onPause.class.getSimpleName()+"\n"+
+                       "\t} \n");
+        builder.append("\t@Override\n"+
+                       "\t"+key+" void onResume() { \n"+
+                       "\tsuper.onResume();\n"+
+                       "\t//"+onResume.class.getSimpleName()+"\n"+
+                       "\t} \n");
+        builder.append("\t@Override\n"+
+                       "\t"+key+" void onStop() { \n"+
+                       "\tsuper.onStop();\n"+
+                       "\t//"+onStop.class.getSimpleName()+"\n"+
+                       "\t} \n");
+        builder.append("\t@Override\n"+
+                       "\t"+key+" void onDestroy() { \n"+
+                       "\tsuper.onDestroy();\n"+
+                       "\t//" + onDestroy.class.getSimpleName() + "\n"+
+                       "\t} \n");
+        String target = "";
         if(lifeListener.getAnnotationClass().equals(onStart.class)){
-            builder.append("  @Override\n");
-            builder.append("  "+key+" void onStart() { \n");
-            builder.append("      super.onStart();\n");
-            builder.append("\t//"+onStart.class.getSimpleName()+"\n");
-            builder.append("      "+lifeListener.getMethod()+"();\n");
-            builder.append("  } \n");
+            target = "//"+ onStart.class.getSimpleName();
         }else if(lifeListener.getAnnotationClass().equals(onPause.class)){
-            builder.append("  @Override\n");
-            builder.append("  "+key+" void onPause() { \n");
-            builder.append("      super.onPause();\n");
-            builder.append("\t//"+onPause.class.getSimpleName()+"\n");
-            builder.append("      "+lifeListener.getMethod()+"();\n");
-            builder.append("  } \n");
+            target = "//"+ onPause.class.getSimpleName();
         }else if(lifeListener.getAnnotationClass().equals(onResume.class)){
-            builder.append("  @Override\n");
-            builder.append("  "+key+" void onResume() { \n");
-            builder.append("      super.onResume();\n");
-            builder.append("\t//"+onResume.class.getSimpleName()+"\n");
-            builder.append("      "+lifeListener.getMethod()+"();\n");
-            builder.append("  } \n");
+            target = "//"+ onResume.class.getSimpleName();
         }else if(lifeListener.getAnnotationClass().equals(onStop.class)){
-            builder.append("  @Override\n");
-            builder.append("  "+key+" void onStop() { \n");
-            builder.append("      super.onStop();\n");
-            builder.append("\t//"+onStop.class.getSimpleName()+"\n");
-            builder.append("      "+lifeListener.getMethod()+"();\n");
-            builder.append("  } \n");
+            target = "//"+ onStop.class.getSimpleName();
         }else if(lifeListener.getAnnotationClass().equals(onDestroy.class)){
-            builder.append("  @Override\n");
-            builder.append("  "+key+" void onDestroy() { \n");
-            builder.append("      super.onDestroy();\n");
-            builder.append("\t//"+onDestroy.class.getSimpleName()+"\n");
-            builder.append("      "+lifeListener.getMethod()+"();\n");
-            builder.append("  } \n");
+            target = "//"+ onDestroy.class.getSimpleName();
         }else  if(lifeListener.getAnnotationClass().equals(onCreate.class)){
-            String target = "//"+ onCreate.class.getSimpleName();
-            int index = builder.indexOf(target);
-            builder.insert(index, "\n\t"+lifeListener.getMethod()+"();\n");
+            target = "//"+ onCreate.class.getSimpleName();
         }
+        int index = builder.indexOf(target);
+        builder.insert(index, "\n\t" + lifeListener.getMethod() + "();\n");
     }
 
-    private String dealRequest(StringBuilder builder){
+    private void dealRequest(StringBuilder builder){
         for(RequestVo vo : getRequestVos()){
             String replace = "";
+            int index = 0;
+            if(vo.getRef_id() !=0 && !vo.getRef().equals("")){
+                String target = "//"+vo.getRef_id()+"-"+vo.getRef();
+                index = builder.indexOf(target);
+            }else if(vo.getRef_id() == 0 && !vo.getRef().equals("")){
+                String target = "//"+vo.getRef();
+                index = builder.indexOf(target);
+            }
             switch (vo.getRequestType()){
                 case "String":
                     replace = RequestTemplete.STRING.output(vo);
@@ -264,24 +284,34 @@ public class ViewGenerator {
                 default:
                     break;
             }
-            if(vo.getRef_id() !=0 && !vo.getRef().equals("")){
-                String target = "//"+vo.getRef_id()+"-"+vo.getRef();
-                int index = builder.indexOf(target);
-                builder.insert(index,replace);
-            }else if(vo.getRef_id() == 0 && !vo.getRef().equals("")){
-                String target = "//"+vo.getRef();
-                int index = builder.indexOf(target);
-                builder.insert(index,replace);
-            }
+            builder.insert(index,replace);//+"//index:"+index+",method:"+vo.getName()
         }
-        return builder.toString();
     }
 
     enum RequestTemplete {
         STRING{
             @Override
             public String output(RequestVo vo){
-                String replace = "\n\tStringRequest req"+vo.getUuid()+" = new StringRequest(Request.Method.GET,\n" +
+                String[] headers =  vo.getHeaders();
+                String[] params = vo.getParams();
+                String replace = "\n\tStringRequest req"+vo.getUuid()+" = new StringRequest(";
+                switch (vo.getMethodType()){
+                    case "Post":
+                          replace+= "Request.Method.POST,\n";
+                        break;
+                    case "Get":
+                        replace+= "Request.Method.GET,\n";
+                        break;
+                    case "Put":
+                        replace+= "Request.Method.PUT,\n";
+                        break;
+                    case "Delete":
+                        replace+= "Request.Method.DELETE,\n";
+                        break;
+                    default:
+                        break;
+                }
+                        replace +=
                         "\t\t"+"\""+vo.getUrl()+"\""+", new Response.Listener<String>() {\n" +
                         "\t\t\t@Override\n" +
                         "\t\t\tpublic void onResponse(String result) {\n";
@@ -298,8 +328,30 @@ public class ViewGenerator {
                         "\t\t\tpublic void onErrorResponse(VolleyError error) {\n" +
                         "\t\t\t" +vo.getName()+"(null,error);\n"+
                         "\t\t\t}\n" +
-                        "\t\t});\n"+
-                        "\tif(queue != null)\n"+
+                        "\t\t}){\n"+
+                        "\t\t\t@Override\n" +
+                                "\t\t\tpublic Map<String, String> getHeaders()\n" +
+                                "\t\t\tthrows AuthFailureError {\n" +
+                                "\t\t\tHashMap< String, String> map = new HashMap<String, String>();\n";
+                                for(String header : headers){
+                                    String [] head = header.split(":");
+                                    replace += "\t\t\tmap.put("+"\""+head[0]+"\",\""+head[1]+"\");\n";
+                                }
+                                replace+=
+                                "\t\t\treturn map;\n" +
+                                "\t\t\t}\n"+
+                        "\t\t\t@Override\n" +
+                        "\t\t\tpublic Map<String, String> getParams()\n" +
+                        "\t\t\tthrows AuthFailureError {\n" +
+                        "\t\t\tHashMap< String, String> map = new HashMap<String, String>();\n";
+                        for(String param : params){
+                            String [] par = param.split(":");
+                            replace += "\t\t\tmap.put("+"\""+par[0]+"\",\""+par[1]+"\");\n";
+                        }
+                        replace+=
+                        "\t\t\treturn map;\n" +
+                        "\t\t\t}\n"+
+                        "\t\t};\n"+
                         "\tqueue.add(req"+vo.getUuid()+");\n";
             return replace;
             }
@@ -307,13 +359,96 @@ public class ViewGenerator {
         JSON{
             @Override
             public String output(RequestVo vo){
-                String replace = "";
+                String[] headers =  vo.getHeaders();
+                String[] params = vo.getParams();
+                String replace = "\n\tJsonRequest req"+vo.getUuid()+" = new JsonRequest(";
+                switch (vo.getMethodType()){
+                    case "Post":
+                        replace+= "Request.Method.POST,\n";
+                        break;
+                    case "Get":
+                        replace+= "Request.Method.GET,\n";
+                        break;
+                    case "Put":
+                        replace+= "Request.Method.PUT,\n";
+                        break;
+                    case "Delete":
+                        replace+= "Request.Method.DELETE,\n";
+                        break;
+                    default:
+                        break;
+                }
+                replace +=
+                        "\t\t"+"\""+vo.getUrl()+"\""+
+                                ",\""+"jsonString"+"\""+
+                                ", new Response.Listener<String>() {\n" +
+                                "\t\t\t@Override\n" +
+                                "\t\t\tpublic void onResponse(String result) {\n";
+                if(!"".equals(vo.getConvertClass())) {
+                    replace +=
+                            "\t\t\t" + vo.getConvertClass() + " vo=" + "JSON.parseObject(result," + vo.getConvertClass() + ".class);\n"+
+                                    "\t\t\t" + vo.getName() + "(vo,null);\n";}else{
+                    replace +=
+                            "\t\t\t" + vo.getName() + "(result,null);\n"; }
+                    replace +=
+                        "\t\t\t}\n" +
+                        "\t\t}, new ErrorListener() {\n" +
+                        "\t\t\t@Override\n" +
+                        "\t\t\tpublic void onErrorResponse(VolleyError error) {\n" +
+                        "\t\t\t" +vo.getName()+"(null,error);\n"+
+                        "\t\t\t}\n" +
+                        "\t\t}){\n"+
+                        "\t\t\t@Override\n" +
+                        "\t\t\tpublic Map<String, String> getHeaders()\n" +
+                        "\t\t\tthrows AuthFailureError {\n" +
+                        "\t\t\tHashMap< String, String> map = new HashMap<String, String>();\n";
+                        for(String header : headers){
+                            String [] head = header.split(":");
+                            replace += "\t\t\tmap.put("+"\""+head[0]+"\",\""+head[1]+"\");\n";
+                        }
+                        replace+=
+                        "\t\t\treturn map;\n" +
+                                "\t\t\t}\n"+
+                                "\t\t\t@Override\n" +
+                                "\t\t\tpublic Map<String, String> getParams()\n" +
+                                "\t\t\tthrows AuthFailureError {\n" +
+                                "\t\t\tHashMap< String, String> map = new HashMap<String, String>();\n";
+                        for(String param : params){
+                            String [] par = param.split(":");
+                            replace += "\t\t\tmap.put("+"\""+par[0]+"\",\""+par[1]+"\");\n";
+                        }
+                        replace+=
+                        "\t\t\treturn map;\n" +
+                        "\t\t\t}\n"+
+                        "\t\t\t@Override\n"+
+                        "\t\t\tprotected Response<String> parseNetworkResponse(NetworkResponse response) {\n"+
+                        "\t\t\t\ttry {\n"+
+                        "\t\t\t\tString parsed = new String(response.data, HttpHeaderParser.parseCharset(response.headers));\n"+
+                        "\t\t\t\treturn Response.success(parsed, HttpHeaderParser.parseCacheHeaders(response));\n"+
+                        "\t\t\t\t} catch (UnsupportedEncodingException e) {\n"+
+                        "\t\t\t\t\treturn Response.error(new ParseError(e));\n"+
+                        "\t\t\t\t}\n"+
+                        "\n\t\t\t}\n"+
+//                        "\t\t\t@Override\n"+
+//                        "\t\t\tprotected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {\n"+
+//                        "\t\t\t\ttry {\n"+
+//                        "\t\t\t\tString jsonString = new String(response.data, HttpHeaderParser.parseCharset(response.headers));\n"+
+//                        "\t\t\t\treturn Response.success(new JSONObject(jsonString),HttpHeaderParser.parseCacheHeaders(response));\n"+
+//                        "\t\t\t\t} catch (UnsupportedEncodingException e) {\n"+
+//                        "\t\t\t\t\treturn Response.error(new ParseError(e));\n"+
+//                        "\t\t\t\t} catch (JSONException je) {\n"+
+//                        "\t\t\t\t\treturn Response.error(new ParseError(je));\n"+
+//                        "\t\t\t\t}\n\t\t\t}\n"+
+                        "\t\t};\n"+
+                        "\tqueue.add(req"+vo.getUuid()+");\n";
             return replace;
             }
         },
         IMAGE{
             @Override
             public String output(RequestVo vo){
+                String[] headers =  vo.getHeaders();
+                String[] params = vo.getParams();
                 String replace = "\n\tImageRequest req"+vo.getUuid()+" = new ImageRequest("+
                         "\""+vo.getUrl()+"\""+
                         ", new Response.Listener<Bitmap>() {\n" +
@@ -327,7 +462,30 @@ public class ViewGenerator {
                         "\t\t\tpublic void onErrorResponse(VolleyError error) {\n" +
                         "\t\t\t" +vo.getName()+"(null,error);\n"+
                         "\t\t\t}\n" +
-                        "\t\t});\n" +
+                        "\t\t}){\n" +
+                        "\t\t\t@Override\n" +
+                        "\t\t\tpublic Map<String, String> getHeaders()\n" +
+                        "\t\t\tthrows AuthFailureError {\n" +
+                        "\t\t\tHashMap< String, String> map = new HashMap<String, String>();\n";
+                        for(String header : headers){
+                            String [] head = header.split(":");
+                            replace += "\t\t\tmap.put("+"\""+head[0]+"\",\""+head[1]+"\");\n";
+                        }
+                        replace+=
+                        "\t\t\treturn map;\n" +
+                        "\t\t\t}\n"+
+                        "\t\t\t@Override\n" +
+                        "\t\t\tpublic Map<String, String> getParams()\n" +
+                        "\t\t\tthrows AuthFailureError {\n" +
+                        "\t\t\tHashMap< String, String> map = new HashMap<String, String>();\n";
+                        for(String param : params){
+                            String [] par = param.split(":");
+                            replace += "\t\t\tmap.put("+"\""+par[0]+"\",\""+par[1]+"\");\n";
+                        }
+                        replace+=
+                        "\t\t\treturn map;\n" +
+                        "\t\t\t}\n"+
+                        "\t\t};\n"+
                         "\tqueue.add(req"+vo.getUuid()+");\n";
             return replace;
             }

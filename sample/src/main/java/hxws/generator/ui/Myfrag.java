@@ -7,7 +7,6 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.android.volley.RequestQueue;
-import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
 
 import hxws.generator.R;
@@ -15,11 +14,7 @@ import hxws.generator.annotations.findview;
 import hxws.generator.annotations.lifecycle.afterInject;
 import hxws.generator.annotations.lifecycle.onCreate;
 import hxws.generator.annotations.onItemClick;
-import hxws.generator.annotations.rest.addRequest;
-import hxws.generator.annotations.rest.mark.Ref;
-import hxws.generator.annotations.rest.mark.RequestType;
 import hxws.generator.annotations.setLayout;
-import hxws.generator.vo.Vo;
 
 @setLayout(R.layout.frag)
 public class Myfrag extends Fragment {
@@ -37,14 +32,5 @@ public class Myfrag extends Fragment {
     @afterInject void setAdapter(){
         SimpleAdapter adapter = new SimpleAdapter(getActivity());
         lv.setAdapter(adapter);
-    }
-    @addRequest(methodType = "Get",url = "http://api.feng-jian.com/",
-                requestType = RequestType.STRING,convert = Vo.class,
-                ref = Ref.AFTERINJECT)
-    void request(Vo result,VolleyError error){
-        if(result != null)
-            Toast.makeText(getActivity(),result.getErr_msg(),Toast.LENGTH_LONG).show();
-        else
-            Toast.makeText(getActivity(),error.getMessage(),Toast.LENGTH_LONG).show();
     }
 }

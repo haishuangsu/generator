@@ -185,17 +185,16 @@ public final class GeneratorProcessor extends AbstractProcessor{
             String [] headers = element.getAnnotation(addRequest.class).headers();
             String [] params = element.getAnnotation(addRequest.class).params();
             Annotation annotation = element.getAnnotation(addRequest.class);
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "what:" + annotation.toString());
             String map = annotation.toString().split(",")[2].trim();
             String convertClassName = map.contains("None") ? "" : map.substring(8, map.length());
             int ref_id = element.getAnnotation(addRequest.class).ref_id();
             String ref = element.getAnnotation(addRequest.class).ref();
             String requestType = element.getAnnotation(addRequest.class).requestType();
-            RequestVo vo = new RequestVo(element.getSimpleName().toString(),methodType,requestType,url,headers,params,convertClassName,ref_id,ref);
+            RequestVo vo = new RequestVo(element.getSimpleName().toString(),methodType,requestType,url,params,headers,convertClassName,ref_id,ref);
             generator.addRequestVo(vo);
             processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, ""+enclosingElement.getSimpleName()+",注释的方法:" + element.getSimpleName() +
                     ",url:" + url + ",methodType:" + methodType +
-                    ",convertClass:" + convertClassName+",ref_id:"+ref_id+",ref_method:"+ref+",map:"+map);
+                    ",convertClass:" + convertClassName+",ref_id:"+ref_id+",ref_method:"+ref+",map:"+map+",headers:");
         }
     }
 

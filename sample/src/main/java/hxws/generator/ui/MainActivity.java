@@ -15,7 +15,6 @@ import com.android.volley.toolbox.Volley;
 
 import hxws.generator.R;
 import hxws.generator.annotations.findview;
-import hxws.generator.annotations.lifecycle.afterInject;
 import hxws.generator.annotations.lifecycle.onCreate;
 import hxws.generator.annotations.onClick;
 import hxws.generator.annotations.onLongClick;
@@ -42,7 +41,7 @@ public class MainActivity extends FragmentActivity {
     }
 
     @onLongClick(R.id.jump) public void longClick(){
-        Toast.makeText(this,"logClick",Toast.LENGTH_SHORT).show();
+        Toast.makeText(this,"longClick",Toast.LENGTH_SHORT).show();
     }
 
     @onClick(R.id.getImage) public void setGetImage(){ }
@@ -60,25 +59,10 @@ public class MainActivity extends FragmentActivity {
        queue = Volley.newRequestQueue(getApplicationContext());
     }
 
-    @addRequest(methodType = "Post",url = "http://api.feng-jian.com/",
-                requestType = RequestType.STRING,headers = {},params = {},
-                ref = Ref.AFTERINJECT)
-    public void addRequest(String result,VolleyError error){
-        if(result != null)
-            Toast.makeText(this, result, Toast.LENGTH_LONG).show();
-        else
-            Toast.makeText(this,error.getMessage(),Toast.LENGTH_LONG).show();
-    }
-
-    @afterInject
-    void after(){
-
-    }
-
     @addRequest(methodType = "Get",url = "http://d.hiphotos.baidu.com/zhidao/pic/item/562c11dfa9ec8a13e028c4c0f603918fa0ecc0e4.jpg",
-                requestType = RequestType.IMAGE,
+                requestType = RequestType.IMAGE,headers = {"Content-type:application/json"},
                 ref_id = R.id.getImage,ref = Ref.CLICK)
-    public void getIma(Bitmap bitmap,VolleyError error){
+    public void getIm(Bitmap bitmap,VolleyError error){
         pic.setImageBitmap(bitmap);
     }
 }
