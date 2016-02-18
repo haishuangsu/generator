@@ -52,8 +52,8 @@ dependencies {
 //    compile project(':generator')
 ```
 ===========================
-###    Author:苏海双
-###    E-mail:hxwstogether@gmail.com
+####    Author:苏海双
+####    E-mail:hxwstogether@gmail.com
 
 
 
